@@ -42,10 +42,28 @@
             <!-- File Selection Bar -->
             <materialDesign:Card DockPanel.Dock="Top" Margin="16,12,16,0" Padding="12">
                 <DockPanel>
-                    <Button DockPanel.Dock="Right" Command="{Binding AnalyzeCommand}"
+                    <Button DockPanel.Dock="Right" Command="{Binding AnalyzeExactCommand}"
                             Style="{StaticResource MaterialDesignRaisedButton}"
-                            Margin="8,0,0,0" Content="ANALISAR"
-                            materialDesign:ButtonAssist.CornerRadius="4" />
+                            Margin="8,0,0,0"
+                            materialDesign:ButtonAssist.CornerRadius="4"
+                            ToolTip="Compara referências de forma exata (literal)">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="Equal" Width="18" Height="18"
+                                                     VerticalAlignment="Center" Margin="0,0,6,0" />
+                            <TextBlock Text="Análise Exata" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                    <Button DockPanel.Dock="Right" Command="{Binding AnalyzeSmartCommand}"
+                            Style="{StaticResource MaterialDesignRaisedButton}"
+                            Margin="8,0,0,0"
+                            materialDesign:ButtonAssist.CornerRadius="4"
+                            ToolTip="Compara referências com normalização e tokenização inteligente">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="AutoFix" Width="18" Height="18"
+                                                     VerticalAlignment="Center" Margin="0,0,6,0" />
+                            <TextBlock Text="Análise Inteligente" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
                     <Button DockPanel.Dock="Right" Command="{Binding BrowseFileCommand}"
                             Style="{StaticResource MaterialDesignOutlinedButton}"
                             Margin="8,0,0,0"

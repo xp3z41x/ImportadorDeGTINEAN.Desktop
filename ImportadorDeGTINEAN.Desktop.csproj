@@ -8,9 +8,9 @@
     <UseWPF>true</UseWPF>
     <RootNamespace>ImportadorDeGTINEAN.Desktop</RootNamespace>
     <AssemblyName>ImportadorDeGTINEAN.Desktop</AssemblyName>
-    <Version>10.0.3</Version>
-    <FileVersion>10.0.3.0</FileVersion>
-    <AssemblyVersion>10.0.3</AssemblyVersion>
+    <Version>10.0.4</Version>
+    <FileVersion>10.0.4.0</FileVersion>
+    <AssemblyVersion>10.0.4</AssemblyVersion>
     <ApplicationIcon>icon.ico</ApplicationIcon>
   </PropertyGroup>
 

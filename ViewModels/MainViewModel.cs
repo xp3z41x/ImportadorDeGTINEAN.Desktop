@@ -27,6 +27,7 @@ namespace ImportadorDeGTINEAN.Desktop.ViewModels
         private string? _selectedBrand;
         private bool _hasResults;
 
+        private bool _lastUseExactMatch;
         private readonly object _resultsLock = new();
 
         public ObservableCollection<AnalysisResult> Results { get; } = [];
@@ -41,7 +42,10 @@ namespace ImportadorDeGTINEAN.Desktop.ViewModels
             set
             {
                 if (SetProperty(ref _filePath, value))
-                    ((RelayCommand)AnalyzeCommand).RaiseCanExecuteChanged();
+                {
+                    ((RelayCommand)AnalyzeSmartCommand).RaiseCanExecuteChanged();
+                    ((RelayCommand)AnalyzeExactCommand).RaiseCanExecuteChanged();
+                }
             }
         }
 
@@ -58,7 +62,8 @@ namespace ImportadorDeGTINEAN.Desktop.ViewModels
             {
                 if (SetProperty(ref _isAnalyzing, value))
                 {
-                    ((RelayCommand)AnalyzeCommand).RaiseCanExecuteChanged();
+                    ((RelayCommand)AnalyzeSmartCommand).RaiseCanExecuteChanged();
+                    ((RelayCommand)AnalyzeExactCommand).RaiseCanExecuteChanged();
                     ((RelayCommand)ExecuteUpdateCommand).RaiseCanExecuteChanged();
                     (FixDuplicatesCommand as RelayCommand)?.RaiseCanExecuteChanged();
                 }
@@ -123,7 +128,8 @@ namespace ImportadorDeGTINEAN.Desktop.ViewModels
         }
 
         public ICommand BrowseFileCommand { get; }
-        public ICommand AnalyzeCommand { get; }
+        public ICommand AnalyzeSmartCommand { get; }
+        public ICommand AnalyzeExactCommand { get; }
         public ICommand ExecuteUpdateCommand { get; }
         public ICommand OpenSettingsCommand { get; }
         public ICommand SelectAllCommand { get; }
@@ -136,7 +142,8 @@ namespace ImportadorDeGTINEAN.Desktop.ViewModels
             BindingOperations.EnableCollectionSynchronization(Results, _resultsLock);
 
             BrowseFileCommand = new RelayCommand(_ => BrowseFile());
-            AnalyzeCommand = new RelayCommand(async _ => await AnalyzeAsync(), _ => !string.IsNullOrEmpty(FilePath) && !IsAnalyzing);
+            AnalyzeSmartCommand = new RelayCommand(async _ => await AnalyzeAsync(useExactMatch: false), _ => !string.IsNullOrEmpty(FilePath) && !IsAnalyzing);
+            AnalyzeExactCommand = new RelayCommand(async _ => await AnalyzeAsync(useExactMatch: true), _ => !string.IsNullOrEmpty(FilePath) && !IsAnalyzing);
             ExecuteUpdateCommand = new RelayCommand(async _ => await ExecuteUpdateAsync(), _ => CanExecuteUpdate && !IsUpdating && !IsAnalyzing);
             OpenSettingsCommand = new RelayCommand(_ => OpenSettings());
             SelectAllCommand = new RelayCommand(_ => SelectAll());
@@ -169,8 +176,9 @@ namespace ImportadorDeGTINEAN.Desktop.ViewModels
             settingsWindow.ShowDialog();
         }
 
-        private async Task AnalyzeAsync()
+        private async Task AnalyzeAsync(bool useExactMatch = false)
         {
+            _lastUseExactMatch = useExactMatch;
             IsAnalyzing = true;
             CanExecuteUpdate = false;
             UnsubscribeResults();
@@ -238,7 +246,11 @@ namespace ImportadorDeGTINEAN.Desktop.ViewModels
 
                         foreach (var (dbRef, dbBarcode, dbDescricao, dbMarca) in dbRecords)
                         {
-                            if (ReferenceMatcherService.IsMatch(row.RawReference, dbRef))
+                            var isMatch = useExactMatch
+                                ? ReferenceMatcherService.IsExactMatch(row.RawReference, dbRef)
+                                : ReferenceMatcherService.IsMatch(row.RawReference, dbRef);
+
+                            if (isMatch)
                             {
                                 matchedRef = dbRef;
                                 matchedCurrentBarcode = dbBarcode;
@@ -336,7 +348,8 @@ namespace ImportadorDeGTINEAN.Desktop.ViewModels
                 UpdateSelectedCount();
                 HasResults = Results.Count > 0;
 
-                AppendLog($"{total} linhas analisadas. {matched} prontos para atualizar, {noMatch} não encontrados, {invalid} códigos inválidos, {duplicate} duplicados, {alreadySet} já cadastrados.");
+                var modeLabel = useExactMatch ? "exata" : "inteligente";
+                AppendLog($"Análise {modeLabel}: {total} linhas analisadas. {matched} prontos para atualizar, {noMatch} não encontrados, {invalid} códigos inválidos, {duplicate} duplicados, {alreadySet} já cadastrados.");
                 CanExecuteUpdate = CountSelected > 0;
 
                 AnalysisCompleted?.Invoke();
@@ -496,7 +509,7 @@ namespace ImportadorDeGTINEAN.Desktop.ViewModels
             AppendLog($"Correção concluída: {corrected} corrigido(s), {errors} erro(s). Refazendo análise...");
             IsUpdating = false;
 
-            await AnalyzeAsync();
+            await AnalyzeAsync(_lastUseExactMatch);
         }
 
         private void UpdateSelectedCount()

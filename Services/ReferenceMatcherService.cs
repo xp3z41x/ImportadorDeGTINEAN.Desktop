@@ -51,5 +51,13 @@ namespace ImportadorDeGTINEAN.Desktop.Services
 
             return false;
         }
+
+        public static bool IsExactMatch(string spreadsheetRef, string dbRef)
+        {
+            if (string.IsNullOrWhiteSpace(spreadsheetRef) || string.IsNullOrWhiteSpace(dbRef))
+                return false;
+
+            return spreadsheetRef.Trim().Equals(dbRef.Trim(), StringComparison.OrdinalIgnoreCase);
+        }
     }
 }
