@@ -99,5 +99,18 @@ namespace ImportadorDeGTINEAN.Desktop.Services
 
             return await cmd.ExecuteNonQueryAsync();
         }
+
+        public async Task<int> ClearBarcodeFromOtherProductsAsync(string barcode, string keepReferencia)
+        {
+            await using var conn = new NpgsqlConnection(_connectionString);
+            await conn.OpenAsync();
+
+            await using var cmd = new NpgsqlCommand(
+                "UPDATE cadpro SET codigo_barra = '' WHERE codigo_barra = @barcode AND referencia <> @ref", conn);
+            cmd.Parameters.AddWithValue("barcode", barcode);
+            cmd.Parameters.AddWithValue("ref", keepReferencia);
+
+            return await cmd.ExecuteNonQueryAsync();
+        }
     }
 }

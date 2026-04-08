@@ -60,6 +60,7 @@ namespace ImportadorDeGTINEAN.Desktop.ViewModels
                 {
                     ((RelayCommand)AnalyzeCommand).RaiseCanExecuteChanged();
                     ((RelayCommand)ExecuteUpdateCommand).RaiseCanExecuteChanged();
+                    (FixDuplicatesCommand as RelayCommand)?.RaiseCanExecuteChanged();
                 }
             }
         }
@@ -70,7 +71,10 @@ namespace ImportadorDeGTINEAN.Desktop.ViewModels
             set
             {
                 if (SetProperty(ref _isUpdating, value))
+                {
                     ((RelayCommand)ExecuteUpdateCommand).RaiseCanExecuteChanged();
+                    (FixDuplicatesCommand as RelayCommand)?.RaiseCanExecuteChanged();
+                }
             }
         }
 
@@ -88,7 +92,15 @@ namespace ImportadorDeGTINEAN.Desktop.ViewModels
         public int CountMatched { get => _countMatched; set => SetProperty(ref _countMatched, value); }
         public int CountNoMatch { get => _countNoMatch; set => SetProperty(ref _countNoMatch, value); }
         public int CountInvalidBarcode { get => _countInvalidBarcode; set => SetProperty(ref _countInvalidBarcode, value); }
-        public int CountDuplicate { get => _countDuplicate; set => SetProperty(ref _countDuplicate, value); }
+        public int CountDuplicate
+        {
+            get => _countDuplicate;
+            set
+            {
+                if (SetProperty(ref _countDuplicate, value))
+                    (FixDuplicatesCommand as RelayCommand)?.RaiseCanExecuteChanged();
+            }
+        }
         public int CountAlreadySet { get => _countAlreadySet; set => SetProperty(ref _countAlreadySet, value); }
         public int CountUpdated { get => _countUpdated; set => SetProperty(ref _countUpdated, value); }
         public int CountError { get => _countError; set => SetProperty(ref _countError, value); }
@@ -117,6 +129,7 @@ namespace ImportadorDeGTINEAN.Desktop.ViewModels
         public ICommand SelectAllCommand { get; }
         public ICommand DeselectAllCommand { get; }
         public ICommand SelectByBrandCommand { get; }
+        public ICommand FixDuplicatesCommand { get; }
 
         public MainViewModel()
         {
@@ -129,6 +142,7 @@ namespace ImportadorDeGTINEAN.Desktop.ViewModels
             SelectAllCommand = new RelayCommand(_ => SelectAll());
             DeselectAllCommand = new RelayCommand(_ => DeselectAll());
             SelectByBrandCommand = new RelayCommand(_ => SelectByBrand(), _ => !string.IsNullOrEmpty(SelectedBrand));
+            FixDuplicatesCommand = new RelayCommand(async _ => await FixDuplicatesAsync(), _ => CountDuplicate > 0 && !IsAnalyzing && !IsUpdating);
         }
 
         private void BrowseFile()
@@ -430,6 +444,59 @@ namespace ImportadorDeGTINEAN.Desktop.ViewModels
                     result.IsSelected = false;
             }
             UpdateSelectedCount();
+        }
+
+        private async Task FixDuplicatesAsync()
+        {
+            var duplicates = Results
+                .Where(r => r.Status == ImportStatus.DuplicateBarcode && r.MatchedDbReference != null)
+                .ToList();
+
+            if (duplicates.Count == 0)
+                return;
+
+            var confirm = MessageBox.Show(
+                $"Deseja limpar o código de barras de {duplicates.Count} produto(s) com duplicidade no banco de dados?\n\n" +
+                "Os códigos de barras serão removidos dos produtos INCORRETOS, " +
+                "permitindo que sejam atribuídos aos produtos corretos da planilha.\n\n" +
+                "Após a correção, a análise será refeita automaticamente.",
+                "Corrigir Duplicados",
+                MessageBoxButton.YesNo,
+                MessageBoxImage.Warning);
+
+            if (confirm != MessageBoxResult.Yes)
+                return;
+
+            IsUpdating = true;
+            var settings = SettingsService.LoadConnectionSettings();
+            var db = new DatabaseService(settings.Host, settings.Port, settings.Database, settings.User, settings.Password);
+
+            var corrected = 0;
+            var errors = 0;
+
+            foreach (var item in duplicates)
+            {
+                try
+                {
+                    var normalizedBarcode = BarcodeValidatorService.Normalize(item.SpreadsheetBarcode);
+                    var rowsAffected = await db.ClearBarcodeFromOtherProductsAsync(normalizedBarcode, item.MatchedDbReference!);
+                    if (rowsAffected > 0)
+                    {
+                        corrected++;
+                        AppendLog($"Corrigido: barcode {normalizedBarcode} limpo de {rowsAffected} produto(s) incorreto(s)");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    errors++;
+                    AppendLog($"ERRO ao corrigir duplicado {item.SpreadsheetBarcode}: {ex.Message}");
+                }
+            }
+
+            AppendLog($"Correção concluída: {corrected} corrigido(s), {errors} erro(s). Refazendo análise...");
+            IsUpdating = false;
+
+            await AnalyzeAsync();
         }
 
         private void UpdateSelectedCount()

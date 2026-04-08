@@ -123,6 +123,23 @@
                                 <TextBlock Text="Selecionar Marca" VerticalAlignment="Center" />
                             </StackPanel>
                         </Button>
+
+                        <!-- Separator -->
+                        <Border Width="1" Background="{DynamicResource MaterialDesignDivider}"
+                                Margin="12,2,12,2" />
+
+                        <!-- Fix Duplicates -->
+                        <Button Command="{Binding FixDuplicatesCommand}"
+                                Style="{StaticResource MaterialDesignOutlinedButton}"
+                                Padding="8,2" Height="30" FontSize="12"
+                                materialDesign:ButtonAssist.CornerRadius="4"
+                                Foreground="#E91E63">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="BarcodeOff" Width="16" Height="16"
+                                                         VerticalAlignment="Center" Margin="0,0,4,0" />
+                                <TextBlock Text="Corrigir Duplicados" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
                     </StackPanel>
                 </DockPanel>
             </materialDesign:Card>
