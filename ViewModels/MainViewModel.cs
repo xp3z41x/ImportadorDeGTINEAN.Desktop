@@ -1,6 +1,7 @@
 using ImportadorDeGTINEAN.Desktop.Models;
 using ImportadorDeGTINEAN.Desktop.Services;
 using System.Collections.ObjectModel;
+using System.ComponentModel;
 using System.Windows;
 using System.Windows.Data;
 using System.Windows.Input;
@@ -158,6 +159,7 @@ namespace ImportadorDeGTINEAN.Desktop.ViewModels
         {
             IsAnalyzing = true;
             CanExecuteUpdate = false;
+            UnsubscribeResults();
             Results.Clear();
             ResetCounters();
 
@@ -301,7 +303,10 @@ namespace ImportadorDeGTINEAN.Desktop.ViewModels
                 var (items, brandList, total, matched, noMatch, invalid, duplicate, alreadySet, error) = analysisResult;
 
                 foreach (var item in items)
+                {
+                    item.PropertyChanged += OnResultPropertyChanged;
                     Results.Add(item);
+                }
 
                 AvailableBrands.Clear();
                 foreach (var brand in brandList)
@@ -449,6 +454,18 @@ namespace ImportadorDeGTINEAN.Desktop.ViewModels
             SelectedBrand = null;
             _logLines.Clear();
             LogText = string.Empty;
+        }
+
+        private void OnResultPropertyChanged(object? sender, PropertyChangedEventArgs e)
+        {
+            if (e.PropertyName == nameof(AnalysisResult.IsSelected))
+                UpdateSelectedCount();
+        }
+
+        private void UnsubscribeResults()
+        {
+            foreach (var item in Results)
+                item.PropertyChanged -= OnResultPropertyChanged;
         }
 
         private readonly List<string> _logLines = [];
