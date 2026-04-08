@@ -5,6 +5,7 @@
         xmlns:converters="clr-namespace:ImportadorDeGTINEAN.Desktop.Converters"
         xmlns:vm="clr-namespace:ImportadorDeGTINEAN.Desktop.ViewModels"
         Title="Importador de GTIN/EAN"
+        Icon="/icon.png"
         Width="1100" Height="700"
         MinWidth="900" MinHeight="550"
         WindowStartupLocation="CenterScreen"

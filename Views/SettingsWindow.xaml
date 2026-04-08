@@ -5,6 +5,7 @@
         xmlns:converters="clr-namespace:ImportadorDeGTINEAN.Desktop.Converters"
         xmlns:vm="clr-namespace:ImportadorDeGTINEAN.Desktop.ViewModels"
         Title="Configurações - PostgreSQL"
+        Icon="/icon.png"
         Width="480" SizeToContent="Height"
         ResizeMode="NoResize"
         WindowStartupLocation="CenterOwner"

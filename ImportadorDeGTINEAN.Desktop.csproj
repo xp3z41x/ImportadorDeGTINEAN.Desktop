@@ -8,10 +8,15 @@
     <UseWPF>true</UseWPF>
     <RootNamespace>ImportadorDeGTINEAN.Desktop</RootNamespace>
     <AssemblyName>ImportadorDeGTINEAN.Desktop</AssemblyName>
-    <Version>10.0.0</Version>
-    <FileVersion>10.0.0.0</FileVersion>
-    <AssemblyVersion>10.0.0</AssemblyVersion>
+    <Version>10.0.1</Version>
+    <FileVersion>10.0.1.0</FileVersion>
+    <AssemblyVersion>10.0.1</AssemblyVersion>
+    <ApplicationIcon>icon.ico</ApplicationIcon>
   </PropertyGroup>
+
+  <ItemGroup>
+    <Resource Include="icon.png" />
+  </ItemGroup>
 
   <ItemGroup>
     <PackageReference Include="ClosedXML" Version="0.104.2" />
