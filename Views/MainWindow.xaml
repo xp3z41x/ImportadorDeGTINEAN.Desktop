@@ -1,0 +1,275 @@
+<Window x:Class="ImportadorDeGTINEAN.Desktop.Views.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:materialDesign="http://materialdesigninxaml.net/winfx/xaml/themes"
+        xmlns:converters="clr-namespace:ImportadorDeGTINEAN.Desktop.Converters"
+        xmlns:vm="clr-namespace:ImportadorDeGTINEAN.Desktop.ViewModels"
+        Title="Importador de GTIN/EAN"
+        Width="1100" Height="700"
+        MinWidth="900" MinHeight="550"
+        WindowStartupLocation="CenterScreen"
+        Style="{StaticResource MaterialDesignWindow}">
+
+    <Window.DataContext>
+        <vm:MainViewModel />
+    </Window.DataContext>
+
+    <Window.Resources>
+        <converters:StatusToColorConverter x:Key="StatusToColorConverter" />
+        <converters:StatusToTextConverter x:Key="StatusToTextConverter" />
+        <converters:StatusToForegroundConverter x:Key="StatusToForegroundConverter" />
+        <converters:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter" />
+    </Window.Resources>
+
+    <materialDesign:DialogHost DialogTheme="Inherit">
+        <DockPanel>
+            <!-- Top Bar -->
+            <materialDesign:ColorZone Mode="PrimaryMid" DockPanel.Dock="Top" Padding="16">
+                <DockPanel>
+                    <materialDesign:PackIcon Kind="Barcode" Width="28" Height="28" VerticalAlignment="Center" Margin="0,0,12,0" />
+                    <TextBlock Text="Importador de GTIN/EAN" Style="{StaticResource MaterialDesignHeadline6TextBlock}"
+                               Foreground="White" VerticalAlignment="Center" />
+                    <Button DockPanel.Dock="Right" Command="{Binding OpenSettingsCommand}"
+                            Style="{StaticResource MaterialDesignIconForegroundButton}"
+                            Foreground="White" ToolTip="Configurações"
+                            HorizontalAlignment="Right">
+                        <materialDesign:PackIcon Kind="Cog" Width="24" Height="24" />
+                    </Button>
+                </DockPanel>
+            </materialDesign:ColorZone>
+
+            <!-- File Selection Bar -->
+            <materialDesign:Card DockPanel.Dock="Top" Margin="16,12,16,0" Padding="12">
+                <DockPanel>
+                    <Button DockPanel.Dock="Right" Command="{Binding AnalyzeCommand}"
+                            Style="{StaticResource MaterialDesignRaisedButton}"
+                            Margin="8,0,0,0" Content="ANALISAR"
+                            materialDesign:ButtonAssist.CornerRadius="4" />
+                    <Button DockPanel.Dock="Right" Command="{Binding BrowseFileCommand}"
+                            Style="{StaticResource MaterialDesignOutlinedButton}"
+                            Margin="8,0,0,0"
+                            materialDesign:ButtonAssist.CornerRadius="4">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="FolderOpen" VerticalAlignment="Center" Margin="0,0,6,0" />
+                            <TextBlock Text="Selecionar Arquivo" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                    <TextBox Text="{Binding FilePath, Mode=OneWay}" IsReadOnly="True"
+                             materialDesign:HintAssist.Hint="Nenhum arquivo selecionado"
+                             Style="{StaticResource MaterialDesignTextBox}"
+                             VerticalAlignment="Center" />
+                </DockPanel>
+            </materialDesign:Card>
+
+            <!-- Progress Bar -->
+            <ProgressBar DockPanel.Dock="Top" IsIndeterminate="True" Margin="16,4,16,0"
+                         Visibility="{Binding IsAnalyzing, Converter={StaticResource BoolToVisibilityConverter}}" />
+
+            <!-- Selection Bar -->
+            <materialDesign:Card DockPanel.Dock="Top" Margin="16,8,16,0" Padding="8"
+                                 Visibility="{Binding HasResults, Converter={StaticResource BoolToVisibilityConverter}}">
+                <DockPanel>
+                    <!-- Selected count (right) -->
+                    <TextBlock DockPanel.Dock="Right" VerticalAlignment="Center" Margin="12,0,4,0"
+                               FontWeight="SemiBold" Foreground="{DynamicResource PrimaryHueMidBrush}">
+                        <Run Text="{Binding CountSelected, Mode=OneWay}" />
+                        <Run Text=" selecionado(s)" />
+                    </TextBlock>
+
+                    <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+                        <!-- Select All / Deselect All -->
+                        <Button Command="{Binding SelectAllCommand}"
+                                Style="{StaticResource MaterialDesignOutlinedButton}"
+                                Padding="8,2" Height="30" FontSize="12"
+                                materialDesign:ButtonAssist.CornerRadius="4"
+                                Margin="0,0,4,0">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="CheckboxMultipleMarked" Width="16" Height="16"
+                                                         VerticalAlignment="Center" Margin="0,0,4,0" />
+                                <TextBlock Text="Marcar Todos" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+                        <Button Command="{Binding DeselectAllCommand}"
+                                Style="{StaticResource MaterialDesignOutlinedButton}"
+                                Padding="8,2" Height="30" FontSize="12"
+                                materialDesign:ButtonAssist.CornerRadius="4"
+                                Margin="0,0,12,0">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="CheckboxMultipleBlankOutline" Width="16" Height="16"
+                                                         VerticalAlignment="Center" Margin="0,0,4,0" />
+                                <TextBlock Text="Desmarcar Todos" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+
+                        <!-- Separator -->
+                        <Border Width="1" Background="{DynamicResource MaterialDesignDivider}"
+                                Margin="0,2,12,2" />
+
+                        <!-- Brand filter -->
+                        <ComboBox ItemsSource="{Binding AvailableBrands}"
+                                  SelectedItem="{Binding SelectedBrand}"
+                                  materialDesign:HintAssist.Hint="Marca"
+                                  materialDesign:HintAssist.IsFloating="False"
+                                  MinWidth="160" Height="30" FontSize="12"
+                                  Margin="0,0,4,0" VerticalContentAlignment="Center" />
+                        <Button Command="{Binding SelectByBrandCommand}"
+                                Style="{StaticResource MaterialDesignOutlinedButton}"
+                                Padding="8,2" Height="30" FontSize="12"
+                                materialDesign:ButtonAssist.CornerRadius="4">
+                            <StackPanel Orientation="Horizontal">
+                                <materialDesign:PackIcon Kind="FilterCheck" Width="16" Height="16"
+                                                         VerticalAlignment="Center" Margin="0,0,4,0" />
+                                <TextBlock Text="Selecionar Marca" VerticalAlignment="Center" />
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
+                </DockPanel>
+            </materialDesign:Card>
+
+            <!-- Bottom: Update Button -->
+            <materialDesign:Card DockPanel.Dock="Bottom" Margin="16,0,16,12" Padding="12">
+                <DockPanel>
+                    <Button DockPanel.Dock="Right" Command="{Binding ExecuteUpdateCommand}"
+                            Style="{StaticResource MaterialDesignRaisedSecondaryButton}"
+                            materialDesign:ButtonAssist.CornerRadius="4">
+                        <StackPanel Orientation="Horizontal">
+                            <materialDesign:PackIcon Kind="DatabaseArrowUp" VerticalAlignment="Center" Margin="0,0,6,0" />
+                            <TextBlock Text="EXECUTAR ATUALIZAÇÃO" VerticalAlignment="Center" />
+                        </StackPanel>
+                    </Button>
+                    <ProgressBar DockPanel.Dock="Right" IsIndeterminate="True" Margin="8,0,8,0"
+                                 Width="100" Style="{StaticResource MaterialDesignCircularProgressBar}"
+                                 Visibility="{Binding IsUpdating, Converter={StaticResource BoolToVisibilityConverter}}" />
+
+                    <!-- Counters -->
+                    <WrapPanel VerticalAlignment="Center">
+                        <materialDesign:Chip Margin="2" IconBackground="{DynamicResource PrimaryHueMidBrush}" IconForeground="White">
+                            <materialDesign:Chip.Icon>
+                                <TextBlock Text="{Binding CountTotal}" FontSize="11" HorizontalAlignment="Center" />
+                            </materialDesign:Chip.Icon>
+                            Total
+                        </materialDesign:Chip>
+                        <materialDesign:Chip Margin="2" IconBackground="Green" IconForeground="White">
+                            <materialDesign:Chip.Icon>
+                                <TextBlock Text="{Binding CountMatched}" FontSize="11" HorizontalAlignment="Center" />
+                            </materialDesign:Chip.Icon>
+                            OK
+                        </materialDesign:Chip>
+                        <materialDesign:Chip Margin="2" IconBackground="Orange" IconForeground="White">
+                            <materialDesign:Chip.Icon>
+                                <TextBlock Text="{Binding CountNoMatch}" FontSize="11" HorizontalAlignment="Center" />
+                            </materialDesign:Chip.Icon>
+                            Não Encontrados
+                        </materialDesign:Chip>
+                        <materialDesign:Chip Margin="2" IconBackground="#F44336" IconForeground="White">
+                            <materialDesign:Chip.Icon>
+                                <TextBlock Text="{Binding CountInvalidBarcode}" FontSize="11" HorizontalAlignment="Center" />
+                            </materialDesign:Chip.Icon>
+                            EAN Inválido
+                        </materialDesign:Chip>
+                        <materialDesign:Chip Margin="2" IconBackground="#E91E63" IconForeground="White">
+                            <materialDesign:Chip.Icon>
+                                <TextBlock Text="{Binding CountDuplicate}" FontSize="11" HorizontalAlignment="Center" />
+                            </materialDesign:Chip.Icon>
+                            Duplicados
+                        </materialDesign:Chip>
+                        <materialDesign:Chip Margin="2" IconBackground="Gray" IconForeground="White">
+                            <materialDesign:Chip.Icon>
+                                <TextBlock Text="{Binding CountAlreadySet}" FontSize="11" HorizontalAlignment="Center" />
+                            </materialDesign:Chip.Icon>
+                            Já Existe
+                        </materialDesign:Chip>
+                        <materialDesign:Chip Margin="2" IconBackground="#2E7D32" IconForeground="White">
+                            <materialDesign:Chip.Icon>
+                                <TextBlock Text="{Binding CountUpdated}" FontSize="11" HorizontalAlignment="Center" />
+                            </materialDesign:Chip.Icon>
+                            Atualizados
+                        </materialDesign:Chip>
+                        <materialDesign:Chip Margin="2" IconBackground="#B71C1C" IconForeground="White">
+                            <materialDesign:Chip.Icon>
+                                <TextBlock Text="{Binding CountError}" FontSize="11" HorizontalAlignment="Center" />
+                            </materialDesign:Chip.Icon>
+                            Erros
+                        </materialDesign:Chip>
+                    </WrapPanel>
+                </DockPanel>
+            </materialDesign:Card>
+
+            <!-- Main Content: DataGrid + Log -->
+            <Grid Margin="16,8,16,8">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="3*" />
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" MinHeight="100" />
+                </Grid.RowDefinitions>
+
+                <!-- DataGrid -->
+                <materialDesign:Card Grid.Row="0">
+                    <DataGrid x:Name="ResultsDataGrid"
+                              ItemsSource="{Binding Results}" AutoGenerateColumns="False"
+                              IsReadOnly="True" CanUserAddRows="False"
+                              SelectionMode="Single" SelectionUnit="FullRow"
+                              materialDesign:DataGridAssist.CellPadding="8 4"
+                              HeadersVisibility="Column"
+                              VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollBarVisibility="Auto"
+                              VirtualizingPanel.IsVirtualizing="True"
+                              VirtualizingPanel.VirtualizationMode="Recycling"
+                              EnableRowVirtualization="True"
+                              EnableColumnVirtualization="True">
+                        <DataGrid.RowStyle>
+                            <Style TargetType="DataGridRow" BasedOn="{StaticResource MaterialDesignDataGridRow}">
+                                <Setter Property="Background" Value="{Binding Status, Converter={StaticResource StatusToColorConverter}}" />
+                            </Style>
+                        </DataGrid.RowStyle>
+                        <DataGrid.Columns>
+                            <DataGridTemplateColumn Header="" Width="40" CanUserResize="False">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <CheckBox IsChecked="{Binding IsSelected, UpdateSourceTrigger=PropertyChanged}"
+                                                  IsEnabled="{Binding CanBeSelected}"
+                                                  HorizontalAlignment="Center" VerticalAlignment="Center" />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTextColumn Header="Linha" Binding="{Binding RowNumber}" Width="60" />
+                            <DataGridTextColumn Header="Referência (Planilha)" Binding="{Binding SpreadsheetReference}" Width="Auto" />
+                            <DataGridTextColumn Header="Código de Barras" Binding="{Binding SpreadsheetBarcode}" Width="Auto" />
+                            <DataGridTextColumn Header="Referência (Banco)" Binding="{Binding MatchedDbReference}" Width="Auto" />
+                            <DataGridTextColumn Header="Descrição" Binding="{Binding Descricao}" Width="Auto" />
+                            <DataGridTextColumn Header="Marca" Binding="{Binding Marca}" Width="Auto" />
+                            <DataGridTemplateColumn Header="Status" Width="Auto">
+                                <DataGridTemplateColumn.CellTemplate>
+                                    <DataTemplate>
+                                        <TextBlock Text="{Binding Status, Converter={StaticResource StatusToTextConverter}}"
+                                                   Foreground="{Binding Status, Converter={StaticResource StatusToForegroundConverter}}"
+                                                   FontWeight="SemiBold" VerticalAlignment="Center" />
+                                    </DataTemplate>
+                                </DataGridTemplateColumn.CellTemplate>
+                            </DataGridTemplateColumn>
+                            <DataGridTextColumn Header="Mensagem" Binding="{Binding StatusMessage}" Width="Auto" />
+                        </DataGrid.Columns>
+                    </DataGrid>
+                </materialDesign:Card>
+
+                <GridSplitter Grid.Row="1" Height="6" HorizontalAlignment="Stretch"
+                              Background="Transparent" ShowsPreview="True" />
+
+                <!-- Log -->
+                <materialDesign:Card Grid.Row="2">
+                    <DockPanel>
+                        <TextBlock DockPanel.Dock="Top" Text="Log" Margin="8,6,8,2"
+                                   Style="{StaticResource MaterialDesignCaptionTextBlock}"
+                                   Foreground="{DynamicResource MaterialDesignBody}" />
+                        <TextBox Text="{Binding LogText, Mode=OneWay}" IsReadOnly="True"
+                                 VerticalScrollBarVisibility="Auto" AcceptsReturn="True"
+                                 TextWrapping="Wrap" FontFamily="Consolas" FontSize="12"
+                                 Padding="8,4" BorderThickness="0"
+                                 materialDesign:TextFieldAssist.DecorationVisibility="Hidden"
+                                 TextChanged="LogTextBox_TextChanged" />
+                    </DockPanel>
+                </materialDesign:Card>
+            </Grid>
+        </DockPanel>
+    </materialDesign:DialogHost>
+</Window>
